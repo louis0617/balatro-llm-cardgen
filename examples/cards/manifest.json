@@ -1,0 +1,29 @@
+{
+  "cards": [
+    {
+      "intent_index": 0,
+      "card_name": "顺序大师",
+      "intent_text": "做一张让玩家每一手都要重新规划出牌顺序的小丑，效果要非常强烈"
+    },
+    {
+      "intent_index": 3,
+      "card_name": "囤积狂",
+      "intent_text": "设计一张让玩家纠结该出牌还是该留牌在手里的小丑，效果要强到让人明显犹豫"
+    },
+    {
+      "intent_index": 6,
+      "card_name": "混色阶梯",
+      "intent_text": "设计一张和同花、顺子两个流派都沾边的小丑，让走这两条路的玩家都会犹豫要不要买"
+    },
+    {
+      "intent_index": 10,
+      "card_name": "权衡之秤",
+      "intent_text": "设计一张同时影响出牌和弃牌的小丑，让玩家每次都要想是出牌好还是弃牌好"
+    },
+    {
+      "intent_index": 26,
+      "card_name": "富豪赌徒",
+      "intent_text": "设计一张和玩家当前金币数量互动的小丑，钱多和钱少时效果完全不同"
+    }
+  ]
+}

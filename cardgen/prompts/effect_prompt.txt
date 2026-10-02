@@ -1,0 +1,161 @@
+你是一位 Balatro（小丑牌）的资深卡牌设计师，同时会写 Python。
+
+我在开发 Balatro 仿真器。请为一个设计意图设计小丑牌，并直接写出可在仿真器里执行的 effect 函数。
+
+═══════════════════════════════════════
+一、引擎接口（只能用这些）
+═══════════════════════════════════════
+
+## 函数签名（必须一字不差）
+
+```python
+def effect(ctx, hand_type, scored_cards, played_cards, held_cards, game, joker):
+    ...
+```
+
+在【每次玩家出牌计分时】调用一次。
+
+可选（弃牌类卡需要）：同一段代码里再定义
+
+```python
+def on_discard(ctx, discarded_cards, held_cards, game, joker):
+    ...
+```
+
+在【每次玩家弃牌时】调用一次。`ctx.dollars` 立刻到账；`ctx.mult` 变为下一手计分的临时 +Mult；可用 `joker.state` 跨弃牌/出牌记数。
+
+## 基本规则（按本仿真器 MiniBalatro；与原版默认一致处已注明）
+
+- **手牌上限 `HAND_SIZE = 8`**（原版默认也是 8；Juggler 等可把原版抬到 9/10，但 **Mini 固定 8，没有手牌扩容**）。
+- **每手最多打出 5 张**（`played` 为 1..5）；计分后按打出张数补牌，回到 8 张。
+- **同花 / 顺子 / 同花顺都要求打出恰好 5 张**才可能成立；不存在「3 张顺」「4 张同花」这种牌型。对子只需 2 张计分；葫芦是 5 张。
+- 每盲注默认 **4 次出牌、4 次弃牌**（Mini：`HANDS_PER_BLIND=4`，`DISCARDS_PER_BLIND=4`）。
+- `held_cards` = 计分瞬间**未打出、仍留在手里**的牌，不是补牌之后的满手。
+  - 手牌 8 且打满 5 → `len(held)=3`
+  - 因此 `len(held)≥5` 意味着本手最多打 3 张，**才是**真决策；不要写成「手牌 10、打 5 还剩 5」那种恒真条件（那是原版扩手牌后的情况，Mini 没有）。
+- 不要设计在默认规则下几乎总真/总假的条件，再编「高风险高回报」说明。
+
+## 可写入（ctx）
+
+```python
+ctx.mult += N       # 加法倍率
+ctx.chips += N      # 加法筹码
+ctx.x_mult *= N     # 乘倍率（建议 1.1~3.0；苛刻条件才到 4）
+ctx.dollars += N    # 给钱
+ctx.retrigger_count += N   # Mini「计分牌再触发」：对计分牌的牌面筹码+bonus/mult/glass 再结算 N 轮（小丑 flat/x 与手里 steel 不套娃重算）。不是 Mime 全持有能力重触发。
+```
+
+## 可读状态
+
+```python
+hand_type  # 'High Card'|'Pair'|'Two Pair'|'Three of a Kind'|'Straight'|'Flush'|'Full House'|'Four of a Kind'|'Straight Flush'
+
+scored_cards   # list[Card] 实际计分牌
+played_cards   # list[Card] 打出的全部牌
+held_cards     # list[Card] 手中未出牌
+
+# Card 真实字段（不要发明 .value / .chips 属性）：
+#   card.rank         -> 'A','2',...,'10','J','Q','K'
+#   card.suit         -> 'Hearts'|'Diamonds'|'Spades'|'Clubs'
+#   card.enhancement  -> 'none'|'bonus'|'mult'|'steel'|'glass'|'gold'
+#   可读 enhancement；引擎侧：钢=未打出在 held 时 ×1.5；玻=在 scored 时 ×2。
+#   不要假装能在 effect 里「给牌盖钢 / 造玻璃 / 毁牌」。
+
+# 允许的辅助函数（已注入沙箱）：
+rank_value(card)  # A=14,K=13,...,2=2
+chip_value(card)  # 牌面基础筹码（A=11,脸=10,数字=面值）
+
+game.money           # int 当前金币
+game.discards_left   # int
+game.hands_left      # int
+game.ante            # int 1..8
+game.joker_count     # int 当前小丑数量
+
+joker.state          # dict，可跨出牌持久化，例如 joker.state['n'] = ...
+```
+
+## 硬限制
+
+1. 禁止 import / open / eval / exec / __import__
+2. 禁止 random（必须可复现）
+3. 禁止改 scored_cards / played_cards / held_cards / discarded_cards（只读）
+4. 禁止发明未列出的字段或方法
+5. 每个函数体 ≤ 25 行；只允许 `effect` 与可选的 `on_discard`
+6. 只用上面列出的写入与读取
+7. 弃牌立刻给钱/改状态 → 写 `on_discard`；不要假装弃牌时会调用 `effect`
+
+═══════════════════════════════════════
+二、强度参考（原版）
+═══════════════════════════════════════
+
+Joker +4 Mult；Greedy 每 ♦ +3 Mult；Jolly 含对子 +8 Mult；Half ≤3 张 +20 Mult；
+Banner 每剩余弃牌 +30 Chips；Bull 每 $1 → +2 Chips；The Duo 含对子 ×2；Acrobat 最后一手 ×3。
+
+区间提示：+Mult 4~20；+Chips 30~100；×Mult 1.5~3.0；单次 $1~5。
+
+═══════════════════════════════════════
+三、设计要求
+═══════════════════════════════════════
+
+要：制造决策；有强弱场景；能互动构筑；**卡面描述像原版 Balatro，玩家一眼能懂**。
+不要：无条件纯数值；条件极难触发；跟原版骨架雷同（又一个「对子 +8」）。
+不要：小丑上做「玩家点选 A 或 B」的 UI 选择（引擎没有选择交互；用自动条件分支即可）。
+不要：描述写成公式或说明书；效果写进描述的，代码里必须真有。
+
+═══════════════════════════════════════
+三½、设计方向与底线（自动注入，勿删）
+═══════════════════════════════════════
+
+## A. 像一张真正的 Balatro 小丑
+
+写出来的牌应该让人想买、想围绕它改构筑，而不是一份「条件→数值」对照表。
+卡面一句话要像原版：短、俏皮、玩家扫一眼就知道怎么玩。
+
+如果本意图需要制造犹豫和选择——
+玩家面对**同一手还能怎么出**时，应该自己想一想，而不是被牌型自动分到某一档奖励。
+真犹豫来自取舍（留什么、出几张、这手打还是下手打），不是给两个 hand_type 各贴一个数字。
+
+如果本意图是给某个流派提供稳定加成——
+条件达成就干净给好处，不达成就静默；别用扣分逼人就范。
+可以有一点构筑细节，但拿到后「我该往哪走」必须一眼清楚。
+不要做成只改了数字的原版换皮。
+
+## B. 主轴别漂
+
+效果的主收益必须贴着意图在说的玩法。
+意图没提钱或弃牌，就不要把 ctx.dollars / game.money / on_discard 当成核心机制
+（附带 $1 小甜头可以；on_discard 仅做辅助计数且 body≤2 行也可以）。
+
+═══════════════════════════════════════
+四、输出（严格 JSON，无其它文字）
+═══════════════════════════════════════
+
+对下面 4 个意图各出一张卡，机制必须互不相同。
+
+```json
+{
+  "cards": [
+    {
+      "intent_index": 1,
+      "card_name": "中文名2-5字",
+      "design_thinking": "3-5句，讲清楚决策点",
+      "game_description": "原版卡面腔一句话",
+      "effect_code": "def effect(ctx, hand_type, scored_cards, played_cards, held_cards, game, joker):\\n    ...",
+      "balance_note": "数值依据"
+    }
+  ]
+}
+```
+
+intent_index 必须为 1、2、3、4 各一张。
+
+---
+
+## 设计意图
+
+（实际意图由 batch user prompt 注入；下列仅为文件占位。）
+
+1. （占位）
+2. （占位）
+3. （占位）
+4. （占位）

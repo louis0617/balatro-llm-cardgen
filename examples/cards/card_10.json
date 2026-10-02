@@ -1,0 +1,67 @@
+{
+  "intent_index": 10,
+  "card_name": "权衡之秤",
+  "intent_text": "设计一张同时影响出牌和弃牌的小丑，让玩家每次都要想是出牌好还是弃牌好",
+  "intent_type": "expand",
+  "design_thinking": "这张小丑让玩家在出牌和弃牌之间做出实时选择：计分时根据本回合弃牌次数给予加乘，但弃牌次数是有限资源，用多了会影响后续回合的容错率。玩家需要权衡是保留弃牌以应对未来更难的盲注，还是现在消耗弃牌换取即时分数。与增加弃牌数量或弃牌收益的小丑（如Troubadour、Faceless）有良好互动。",
+  "game_description": "本回合每弃过1张牌，本手牌获得+4倍率，但每弃1张牌减少20筹码（至少保留1筹码）。",
+  "effect_code": "def effect(ctx, hand_type, scored_cards, played_cards, held_cards, game, joker):\n    # 读取本回合弃牌数（从state获取，若不存在则初始为0）\n    discards_used = joker.state.get('discards_used', 0)\n    # 计算弃牌数（基于初始弃牌次数与当前剩余差值）\n    # 假设初始弃牌次数为3（固定），则已用 = 3 - game.discards_left\n    discards_used = 3 - game.discards_left\n    if discards_used > 0:\n        ctx.mult += 4 * discards_used\n        # 筹码减少，但至少保留1\n        ctx.chips = max(1, ctx.chips - 20 * discards_used)\n    # 更新state（可选，用于其他情况）\n    joker.state['discards_used'] = discards_used",
+  "balance_note": "基准：若弃1张，则+4 Mult但-20 Chips，相当于约+2.5倍基础分；弃3张则+12 Mult但-60 Chips，高风险高回报。数值基于原版+4 Mult每弃牌，但以筹码为代价，迫使玩家决策。",
+  "ast_errors": [],
+  "smoke": [
+    {
+      "case": "Pair@rich",
+      "hand_type": "Pair",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {
+        "discards_used": 0
+      }
+    },
+    {
+      "case": "FullHouse@rich",
+      "hand_type": "Full House",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {
+        "discards_used": 0
+      }
+    },
+    {
+      "case": "Flush@poor",
+      "hand_type": "Flush",
+      "ok": true,
+      "mult": 12.0,
+      "chips": 1,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {
+        "discards_used": 3
+      }
+    },
+    {
+      "case": "HighCard@poor",
+      "hand_type": "High Card",
+      "ok": true,
+      "mult": 12.0,
+      "chips": 1,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {
+        "discards_used": 3
+      }
+    }
+  ],
+  "executable": true,
+  "smoke_error": null
+}

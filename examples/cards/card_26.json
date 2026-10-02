@@ -1,0 +1,59 @@
+{
+  "intent_index": 26,
+  "card_name": "富豪赌徒",
+  "intent_text": "设计一张和玩家当前金币数量互动的小丑，钱多和钱少时效果完全不同",
+  "intent_type": "creative",
+  "design_thinking": "这张牌让玩家在金币充裕和拮据时面临不同的决策：钱多时追求高倍率但消耗金币，钱少时则获得稳定增益以帮助积累。玩家需要权衡是否保留金币以触发强力效果，还是花费金币换取即时爆发。它与经济类小丑和费用支出策略形成互动，鼓励玩家在风险和收益间抉择。",
+  "game_description": "若持有金币 ≥ $10，消耗 $5 使本手 ×3；否则 +15 Mult",
+  "effect_code": "def effect(ctx, hand_type, scored_cards, played_cards, held_cards, game, joker):\n    if game.money >= 10:\n        ctx.dollars -= 5\n        ctx.x_mult *= 3\n    else:\n        ctx.mult += 15",
+  "balance_note": "高额条件消耗 $5 换取 ×3（接近原版 Acrobat 的 ×3 但需经济代价），低额时 +15 Mult 作为保底，确保在金币不足时仍有用。数值基于原版 +Mult 4~20 和 ×Mult 1.5~3.0 区间，$5 消耗与 Bull 的 $1→2 Chips 相比经济影响适中。",
+  "ast_errors": [],
+  "smoke": [
+    {
+      "case": "Pair@rich",
+      "hand_type": "Pair",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 3.0,
+      "dollars": -5.0,
+      "retrigger_count": 0,
+      "state": {}
+    },
+    {
+      "case": "FullHouse@rich",
+      "hand_type": "Full House",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 3.0,
+      "dollars": -5.0,
+      "retrigger_count": 0,
+      "state": {}
+    },
+    {
+      "case": "Flush@poor",
+      "hand_type": "Flush",
+      "ok": true,
+      "mult": 15.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {}
+    },
+    {
+      "case": "HighCard@poor",
+      "hand_type": "High Card",
+      "ok": true,
+      "mult": 15.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {}
+    }
+  ],
+  "executable": true,
+  "smoke_error": null
+}

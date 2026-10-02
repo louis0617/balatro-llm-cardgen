@@ -1,0 +1,67 @@
+{
+  "intent_index": 0,
+  "card_name": "顺序大师",
+  "intent_text": "做一张让玩家每一手都要重新规划出牌顺序的小丑，效果要非常强烈",
+  "intent_type": "expand",
+  "design_thinking": "这张牌的核心是奖励玩家精心安排出牌顺序，根据打出牌的张数提供递增的倍率，但每手只奖励一次，且倍率随张数指数增长。玩家必须在打出多张牌追求高倍率和保留好牌之间权衡，每手牌都需要重新决策。通过限制每手只触发一次，避免了无脑堆砌，增加了策略深度。",
+  "game_description": "若本手打出的牌数比上一手多，则X倍率增加1.5倍（最多4倍）",
+  "effect_code": "def effect(ctx, hand_type, scored_cards, played_cards, held_cards, game, joker):\n    current_count = len(played_cards)\n    prev_count = joker.state.get('prev_count', 0)\n    if current_count > prev_count:\n        # 计算递增倍率：每多一张额外+1.5x，但最多叠加到4x\n        increase = 1.5 * (current_count - prev_count)\n        if increase > 4.0:\n            increase = 4.0\n        ctx.x_mult *= increase\n    joker.state['prev_count'] = current_count",
+  "balance_note": "基础x1.5，若从1张增至5张可达到x6但被限制为x4，鼓励持续增加手牌数，但受限于手牌上限和保留策略，平均约x2-3，符合强度。",
+  "ast_errors": [],
+  "smoke": [
+    {
+      "case": "Pair@rich",
+      "hand_type": "Pair",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 4.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {
+        "prev_count": 5
+      }
+    },
+    {
+      "case": "FullHouse@rich",
+      "hand_type": "Full House",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {
+        "prev_count": 5
+      }
+    },
+    {
+      "case": "Flush@poor",
+      "hand_type": "Flush",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {
+        "prev_count": 5
+      }
+    },
+    {
+      "case": "HighCard@poor",
+      "hand_type": "High Card",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {
+        "prev_count": 5
+      }
+    }
+  ],
+  "executable": true,
+  "smoke_error": null
+}

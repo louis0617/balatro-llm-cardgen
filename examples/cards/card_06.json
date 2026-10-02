@@ -1,0 +1,59 @@
+{
+  "intent_index": 6,
+  "card_name": "混色阶梯",
+  "intent_text": "设计一张和同花、顺子两个流派都沾边的小丑，让走这两条路的玩家都会犹豫要不要买",
+  "intent_type": "expand",
+  "design_thinking": "这张牌同时奖励顺子的连续性和同花的花色一致性，但要求两种属性在打出的牌中同时存在，迫使玩家在构筑时权衡顺子的跨度与同花的纯度。玩家需要决定是保留五张同花的顺子，还是牺牲同花以换取更高的顺子，从而在两种流派间创造决策点。它鼓励混合构筑，但强度受限于同时满足两个条件，因此不会取代纯流派的核心卡。",
+  "game_description": "若打出的牌含至少4张连续点数且其中至少3张同花色，则本手牌获得 ×2 倍率，并额外 +40 筹码。",
+  "effect_code": "def effect(ctx, hand_type, scored_cards, played_cards, held_cards, game, joker):\n    if len(played_cards) < 4:\n        return\n    ranks = [rank_value(c) for c in played_cards]\n    suits = [c.suit for c in played_cards]\n    # 检查至少4张连续点数（忽略重复）\n    unique_ranks = sorted(set(ranks))\n    has_straight = False\n    for i in range(len(unique_ranks) - 3):\n        if unique_ranks[i+3] - unique_ranks[i] == 3:\n            has_straight = True\n            break\n    if not has_straight:\n        return\n    # 检查至少3张同花色\n    suit_counts = {}\n    for s in suits:\n        suit_counts[s] = suit_counts.get(s, 0) + 1\n    if max(suit_counts.values()) >= 3:\n        ctx.x_mult *= 2\n        ctx.chips += 40",
+  "balance_note": "×2 倍率与 +40 筹码的组合价值约等于一个常见的地域性小丑，但触发条件需要同时满足顺子和同花的子集，比单一条件更难达成，因此数值略高于普通 ×2 卡。+40 筹码提供基础奖励，使即使倍率被稀释也有收益。",
+  "ast_errors": [],
+  "smoke": [
+    {
+      "case": "Pair@rich",
+      "hand_type": "Pair",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {}
+    },
+    {
+      "case": "FullHouse@rich",
+      "hand_type": "Full House",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {}
+    },
+    {
+      "case": "Flush@poor",
+      "hand_type": "Flush",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {}
+    },
+    {
+      "case": "HighCard@poor",
+      "hand_type": "High Card",
+      "ok": true,
+      "mult": 0.0,
+      "chips": 0.0,
+      "x_mult": 1.0,
+      "dollars": 0.0,
+      "retrigger_count": 0,
+      "state": {}
+    }
+  ],
+  "executable": true,
+  "smoke_error": null
+}
